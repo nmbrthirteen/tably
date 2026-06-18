@@ -1,11 +1,24 @@
 const NO_GROUP = -1;
 const GROUP_TITLE = "Tably";
+const pendingTabs = new Map();
+const groupedTabs = new Set();
 
 chrome.tabs.onCreated.addListener((tab) => {
-  void groupOpenedTab(tab);
+  void handleCreatedTab(tab);
 });
 
-async function groupOpenedTab(tab) {
+chrome.tabs.onUpdated.addListener((tabId) => {
+  if (pendingTabs.has(tabId)) {
+    void groupOpenedTab(tabId);
+  }
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  pendingTabs.delete(tabId);
+  groupedTabs.delete(tabId);
+});
+
+async function handleCreatedTab(tab) {
   if (!tab.id || !tab.openerTabId || tab.windowId === chrome.windows.WINDOW_ID_NONE) {
     return;
   }
@@ -15,13 +28,45 @@ async function groupOpenedTab(tab) {
     return;
   }
 
+  pendingTabs.set(tab.id, {
+    openerId: opener.id,
+    windowId: tab.windowId,
+    title: getGroupTitle(opener)
+  });
+
+  await groupOpenedTab(tab.id);
+}
+
+async function groupOpenedTab(tabId) {
+  if (groupedTabs.has(tabId)) {
+    return;
+  }
+
+  const pending = pendingTabs.get(tabId);
+  if (!pending) {
+    return;
+  }
+
+  const [opener, tab] = await Promise.all([
+    getTab(pending.openerId),
+    getTab(tabId)
+  ]);
+
+  if (!opener?.id || !tab?.id || opener.windowId !== pending.windowId || tab.windowId !== pending.windowId) {
+    pendingTabs.delete(tabId);
+    return;
+  }
+
   const group = await addToGroup(opener, tab);
   if (group.id === NO_GROUP) {
     return;
   }
 
+  groupedTabs.add(tabId);
+  pendingTabs.delete(tabId);
+
   if (group.created) {
-    await updateGroup(group.id, opener);
+    await updateGroup(group.id, pending.title);
   }
 
   await activateTab(tab.id, tab.windowId);
@@ -46,10 +91,10 @@ async function addToGroup(opener, tab) {
   }
 }
 
-async function updateGroup(groupId, opener) {
+async function updateGroup(groupId, title) {
   try {
     await chrome.tabGroups.update(groupId, {
-      title: getGroupTitle(opener)
+      title
     });
   } catch {
   }
