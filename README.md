@@ -19,7 +19,9 @@ Tably asks for:
 - `tabGroups`, to create and update native Chromium tab groups.
 - `tabs`, to read the original tab URL and name the group after the website.
 
-It does not ask for host permissions. It does not read page content.
+It also runs a tiny content script on `http` and `https` pages to detect Command-click, Control-click, and middle-click on links.
+
+It does not read page content.
 
 ## Browser Support
 

@@ -4,6 +4,13 @@
   "version": "1.0.0",
   "description": "Automatically groups tabs opened from links and switches to them.",
   "permissions": ["tabs", "tabGroups"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
