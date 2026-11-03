@@ -24,7 +24,7 @@ Tably uses `tabGroups` to create and update native Chromium tab groups.
 
 Tably uses `tabs` to read the original tab URL and name the group after the website.
 
-Tably runs a small content script on `http` and `https` pages to detect Command-click, Control-click, and middle-click on links. It does not read page content, collect browsing data, or send anything to a server.
+Tably uses `webNavigation` to learn which tab opened a new tab. It runs no content script, does not read page content, collect browsing data, or send anything to a server.
 
 ## Test Instructions
 
